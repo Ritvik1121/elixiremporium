@@ -30,7 +30,6 @@ def get_catalog():
                 }
             ]
     else :
-        return [
-        ]
+        return []
 
 
