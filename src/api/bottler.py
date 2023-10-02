@@ -61,10 +61,13 @@ def get_bottle_plan():
 
     potions_possible = first_row.num_red_ml // 100
 
-    return [
-            {
-                "potion_type": [100, 0, 0, 0],
-                "quantity": potions_possible,
-            }
-        ]
+    if potions_possible > 0 :
+        return [
+                {
+                    "potion_type": [100, 0, 0, 0],
+                    "quantity": potions_possible,
+                }
+            ]
+    else :
+        return []
 
