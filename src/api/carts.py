@@ -26,7 +26,7 @@ def create_cart(new_cart: NewCart):
     """ """
     global g_cart_id
     g_cart_id += 1
-    
+
     carts[g_cart_id] = {"customer": new_cart.customer}
     return {"cart_id": g_cart_id}
 
@@ -63,7 +63,15 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     potions_bought = carts[cart_id]["RED_POTION_0"]
     gold_paid = potions_bought * 50
 
-    with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_potions = {first_row.num_red_potions - potions_bought},  gold = {first_row.gold + gold_paid} WHERE id= 1"))
+    potions_final = first_row.num_red_potions - potions_bought
+    gold_final = first_row.gold + gold_paid
 
-    return {"total_potions_bought": potions_bought, "total_gold_paid": gold_paid}
+    if potions_bought > first_row.num_red_potions:
+        potions_final = first_row.num_red_potions
+        gold_final = first_row.gold
+
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_potions = {potions_final},  gold = {gold_final} WHERE id= 1"))
+
+
+    return {"total_potions_bought": potions_final, "total_gold_paid": gold_final}
