@@ -27,17 +27,29 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory]):
     first_row = result.first()
     red_ml_used = 0
     red_count = 0
+    blue_ml_used = 0
+    blue_count = 0
+    green_ml_used = 0
+    green_count = 0
     
     for potion in potions_delivered:
         match potion.potion_type:
             case [100, 0, 0, 0]:
                 red_ml_used += (100 * potion.quantity)
                 red_count += potion.quantity
+            case [0, 0, 100, 0]:
+                blue_ml_used += (100 * potion.quantity)
+                blue_count += potion.quantity
+            case [0, 100, 0, 0]:
+                green_ml_used += (100 * potion.quantity)
+                green_count += potion.quantity
     
     new_red_ml = first_row.num_red_ml - red_ml_used
+    new_green_ml = first_row.num_green_ml - green_ml_used
+    new_blue_ml = first_row.num_blue_ml - blue_ml_used
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_ml = {new_red_ml},  num_red_potions = {red_count} WHERE id= 1"))
+        result = connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_ml = {new_red_ml}, num_green_ml = {new_green_ml}, num_blue_ml = {new_blue_ml}, num_green_potions = {green_count}, num_blue_potions = {blue_count}, num_red_potions = {red_count} WHERE id= 1"))
     
 
     return "OK"
@@ -59,12 +71,27 @@ def get_bottle_plan():
         result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
     first_row = result.first()
 
-    potions_possible = first_row.num_red_ml // 100
+    red_possible = first_row.num_red_ml // 100
+    green_possible = first_row.num_green_ml // 100
+    blue_possible = first_row.num_blue_ml // 100
 
     return [
             {
                 "potion_type": [100, 0, 0, 0],
-                "quantity": potions_possible,
-            }
+                "quantity": red_possible,
+            }, 
+
+             {
+                "potion_type": [0, 100, 0, 0],
+                "quantity": green_possible,
+            }, 
+
+            {
+                "potion_type": [0, 0, 100, 0],
+                "quantity": blue_possible,
+            }, 
+
+
+
         ]
 
