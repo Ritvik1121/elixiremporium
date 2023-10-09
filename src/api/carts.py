@@ -57,6 +57,7 @@ class CartCheckout(BaseModel):
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
 
+    print(cart_checkout.payment)
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
     first_row = result.first()
@@ -71,25 +72,29 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     if "GREEN_POTION_0" in carts[cart_id].keys():
         green_bought = carts[cart_id]["GREEN_POTION_0"]
 
-    gold_paid = (red_bought + blue_bought + green_bought)* 50
+    potions_bought = red_bought + blue_bought + green_bought
+    gold_paid = potions_bought * 50
 
+    #Updating potion values to put back into database
     red_final = first_row.num_red_potions - red_bought
     green_final = first_row.num_green_potions - green_bought
     blue_final = first_row.num_blue_potions - blue_bought
     
+    #updating gold 
     gold_final = first_row.gold + gold_paid
 
-    if red_bought > first_row.num_red_potions or blue_bought > first_row.num_blue_potions or green_bought > first_row.num_green_potions:
-        red_final = first_row.num_red_potions
-        blue_final = first_row.num_blue_potions
-        green_final = first_row.num_green_potions
-        gold_final = first_row.gold
-        potions_bought = 0
-        gold_paid = 0
+    #case if potions in cart are more than potions in db
+    #if red_bought > first_row.num_red_potions or blue_bought > first_row.num_blue_potions or green_bought > first_row.num_green_potions:
+    #    red_final = first_row.num_red_potions
+    #    blue_final = first_row.num_blue_potions
+    #    green_final = first_row.num_green_potions
+    #    gold_final = first_row.gold
+    #    potions_bought = 0
+    #   gold_paid = 0
 
 
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_potions = {red_final},  num_green_potions = {green_final}, num_blue_potions = {blue_final}, gold = {gold_final} WHERE id= 1"))
 
 
-    return {"total_potions_bought": (red_bought + blue_bought + green_bought), "total_gold_paid": gold_paid}
+    return {"total_potions_bought": potions_bought, "total_gold_paid": gold_paid}
