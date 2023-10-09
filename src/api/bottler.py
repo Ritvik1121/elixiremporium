@@ -32,6 +32,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory]):
     green_ml_used = 0
     green_count = 0
     
+
     for potion in potions_delivered:
         match potion.potion_type:
             case [100, 0, 0, 0]:
@@ -43,6 +44,14 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory]):
             case [0, 100, 0, 0]:
                 green_ml_used += (100 * potion.quantity)
                 green_count += potion.quantity
+    
+    if red_count == 0:
+        red_count = first_row.num_red_potions
+    if blue_count == 0:
+        blue_count = first_row.num_blue_potions
+    if green_count == 0:
+        green_count = first_row.num_green_potions
+    
     
     new_red_ml = first_row.num_red_ml - red_ml_used
     new_green_ml = first_row.num_green_ml - green_ml_used
