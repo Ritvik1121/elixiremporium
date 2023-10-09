@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from src.api import auth
 import sqlalchemy
 from src import database as db
+from fastapi import FastAPI, HTTPException
 
 #with db.engine.begin() as connection:
 #        result = connection.execute(sqlalchemy.text(sql_to_execute))
@@ -85,12 +86,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
 
     #case if potions in cart are more than potions in db
     #if red_bought > first_row.num_red_potions or blue_bought > first_row.num_blue_potions or green_bought > first_row.num_green_potions:
-    #    red_final = first_row.num_red_potions
-    #    blue_final = first_row.num_blue_potions
-    #    green_final = first_row.num_green_potions
-    #    gold_final = first_row.gold
-    #    potions_bought = 0
-    #   gold_paid = 0
+    #    raise HTTPException(status_code = 500, detail ="too many potions in shop")
 
 
     with db.engine.begin() as connection:
