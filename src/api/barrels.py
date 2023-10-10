@@ -33,7 +33,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel]):
     gold_temp = 0 
 
     blue_ml = first_row.num_blue_ml 
-    green_ml = first_row.num_blue_ml 
+    green_ml = first_row.num_green_ml 
 
     for barrel in barrels_delivered:
        match barrel.sku:

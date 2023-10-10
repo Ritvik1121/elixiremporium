@@ -100,7 +100,5 @@ def get_bottle_plan():
                 "quantity": blue_possible,
             }, 
 
-
-
         ]
 
