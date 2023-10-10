@@ -40,10 +40,10 @@ def post_deliver_barrels(barrels_delivered: list[Barrel]):
           case "SMALL_RED_BARREL":
             red_ml += barrel.ml_per_barrel
             gold_temp += barrel.price
-          case "SMALL_BLUE_BARREL":
+          case "MINI_BLUE_BARREL":
             blue_ml += barrel.ml_per_barrel
             gold_temp += barrel.price
-          case "SMALL_GREEN_BARREL":
+          case "MINI_GREEN_BARREL":
             green_ml += barrel.ml_per_barrel
             gold_temp += barrel.price
              
