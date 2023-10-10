@@ -74,7 +74,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         green_bought = carts[cart_id]["GREEN_POTION_0"]
 
     potions_bought = red_bought + blue_bought + green_bought
-    gold_paid = potions_bought * 50
+    gold_paid = (red_bought * 50) + ((blue_bought + green_bought) * 30)
 
     #Updating potion values to put back into database
     red_final = first_row.num_red_potions - red_bought
@@ -86,7 +86,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
 
     #case if potions in cart are more than potions in db
     if red_bought > first_row.num_red_potions or blue_bought > first_row.num_blue_potions or green_bought > first_row.num_green_potions:
-       raise HTTPException(status_code = 500, detail ="too many potions in shop")
+       raise HTTPException(status_code = 500, detail ="too many potions in cart")
 
 
     with db.engine.begin() as connection:
