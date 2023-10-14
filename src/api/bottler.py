@@ -81,17 +81,18 @@ def get_bottle_plan():
     dark_temp = first_row.num_dark_ml
     potions_possible = []
     
-    for potion in result:
-        p_type = potion.potion_type
-        if red_temp >= p_type[0] and green_temp >= p_type[1] and blue_temp >= p_type[2] and dark_temp >= p_type[3]:
-            potions_possible.append({
-                "potion_type": potion.potion_type,
-                "quantity": 1,
-            })
-            red_temp = red_temp - p_type[0]
-            green_temp = green_temp - p_type[1]
-            blue_temp = blue_temp - p_type[2]
-            dark_temp = dark_temp - p_type[3]
+    while red_temp > 0 or green_temp > 0 or blue_temp > 0 or dark_temp > 0:
+        for potion in result:
+            p_type = potion.potion_type
+            if red_temp >= p_type[0] and green_temp >= p_type[1] and blue_temp >= p_type[2] and dark_temp >= p_type[3]:
+                potions_possible.append({
+                    "potion_type": potion.potion_type,
+                    "quantity": 1,
+                })
+                red_temp = red_temp - p_type[0]
+                green_temp = green_temp - p_type[1]
+                blue_temp = blue_temp - p_type[2]
+                dark_temp = dark_temp - p_type[3]
 
     return potions_possible
 
