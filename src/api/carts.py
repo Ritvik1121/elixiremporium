@@ -77,13 +77,11 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         with db.engine.begin() as connection:
             result1 = connection.execute(sqlalchemy.text("""SELECT * FROM potion_inv WHERE sku = :sku"""), [{"sku": potion.sku}])
             connection.execute(sqlalchemy.text("""UPDATE potion_inv SET inventory = inventory - :quantity WHERE sku = :sku"""), [{"quantity": potion.quantity, "sku": potion.sku}])
-        gold_paid += result1.first().cost
-    
+        gold_paid += (result1.first().cost * potion.quantity)
     
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text("""UPDATE global_inventory SET gold = gold + :gold_paid WHERE id = 1"""), [{"gold_paid": gold_paid}])
     
-    print(result)
 
 
 
