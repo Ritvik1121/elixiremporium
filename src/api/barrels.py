@@ -29,25 +29,24 @@ def post_deliver_barrels(barrels_delivered: list[Barrel]):
       result1 = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
     first_row = result1.first()
     
-    red_ml = first_row.num_red_ml 
-    gold_temp = 0 
-
+    red_ml = first_row.num_red_ml  
     blue_ml = first_row.num_blue_ml 
     green_ml = first_row.num_green_ml 
+    dark_ml = first_row.num_dark_ml
+    gold_temp = 0
 
     for barrel in barrels_delivered:
-       match barrel.sku:
-          case "SMALL_RED_BARREL":
+       gold_temp += barrel.price
+       match barrel.potion_type:
+          case [1,0,0,0]:
             red_ml += barrel.ml_per_barrel
-            gold_temp += barrel.price
-          case "MINI_BLUE_BARREL":
+          case [0,0,1,0]:
             blue_ml += barrel.ml_per_barrel
-            gold_temp += barrel.price
-          case "MINI_GREEN_BARREL":
+          case [0,1,0,0]:
             green_ml += barrel.ml_per_barrel
-            gold_temp += barrel.price
-             
-    
+          case [0,0,0,1]:
+            dark_ml+= barrel.ml_per_barrel
+               
     gold_lost = first_row.gold - gold_temp
     
     with db.engine.begin() as connection:
@@ -68,27 +67,32 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     for barrel in wholesale_catalog:
        if barrel.sku == "SMALL_RED_BARREL":
         price = barrel.price
+    
+    gold_temp = first_row.gold
 
-    if  first_row.num_green_potions < 10 and first_row.num_blue_potions < 10 and first_row.gold >= 120:
-       return [
-            {
-                "sku": "MINI_BLUE_BARREL",
-                "quantity": 1  
-            },
-            {
-                "sku": "MINI_GREEN_BARREL",
-                "quantity": 1  
-            }
-        ]
-
-    elif first_row.num_red_potions < 10 and first_row.gold >= price:
-        return [
+    plan = []
+    if first_row.num_red_ml < 500 and gold_temp >= price:
+      plan.append(
             {
                 "sku": "SMALL_RED_BARREL",
                 "quantity": 1,
-            }
-        ]
-    else :
-        return [
-        ]
+            })
+      gold_temp = gold_temp - price
+
+    if first_row.num_blue_ml < 500 and gold_temp >= price:
+      plan.append (
+            {
+                "sku": "SMALL_BLUE_BARREL",
+                "quantity": 1,
+            })
+      gold_temp = gold_temp - price
+
+    if first_row.num_green_ml < 500 and gold_temp >= price:
+      plan.append( {
+                "sku": "SMALL_GREEN_BARREL",
+                "quantity": 1,
+            })
+      gold_temp = gold_temp - price
+      
+    return plan
     

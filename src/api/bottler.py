@@ -26,39 +26,32 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory]):
         result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
     first_row = result.first()
     red_ml_used = 0
-    red_count = 0
     blue_ml_used = 0
-    blue_count = 0
     green_ml_used = 0
-    green_count = 0
+    
+    dark_ml_used = 0
     
 
     for potion in potions_delivered:
-        match potion.potion_type:
-            case [100, 0, 0, 0]:
-                red_ml_used += (100 * potion.quantity)
-                red_count += potion.quantity
-            case [0, 0, 100, 0]:
-                blue_ml_used += (100 * potion.quantity)
-                blue_count += potion.quantity
-            case [0, 100, 0, 0]:
-                green_ml_used += (100 * potion.quantity)
-                green_count += potion.quantity
-    
-    if red_count == 0:
-        red_count = first_row.num_red_potions
-    if blue_count == 0:
-        blue_count = first_row.num_blue_potions
-    if green_count == 0:
-        green_count = first_row.num_green_potions
-    
+        p_type = potion.potion_type
+        red_ml_used += (p_type[0] * potion.quantity)
+        green_ml_used += (p_type[1] * potion.quantity)
+        blue_ml_used += (p_type[2] * potion.quantity)
+        dark_ml_used += (p_type[3] * potion.quantity)
+
+        with db.engine.begin() as connection:
+            connection.execute(sqlalchemy.text("""UPDATE potion_inv 
+                                               SET inventory = inventory + :potion_quantity 
+                                               WHERE potion_type = :p_type"""), [{"potion_quantity": potion.quantity, "p_type": p_type}])
     
     new_red_ml = first_row.num_red_ml - red_ml_used
     new_green_ml = first_row.num_green_ml - green_ml_used
     new_blue_ml = first_row.num_blue_ml - blue_ml_used
+    new_blue_ml = first_row.num_dark_ml - dark_ml_used
 
+   
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_ml = {new_red_ml}, num_green_ml = {new_green_ml}, num_blue_ml = {new_blue_ml}, num_green_potions = {green_count}, num_blue_potions = {blue_count}, num_red_potions = {red_count} WHERE id= 1"))
+        result = connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_ml = {new_red_ml}, num_green_ml = {new_green_ml}, num_blue_ml = {new_blue_ml} WHERE id= 1"))
     
 
     return "OK"
@@ -77,28 +70,28 @@ def get_bottle_plan():
     # Initial logic: bottle all barrels into red potions.
     
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
-    first_row = result.first()
+        result = connection.execute(sqlalchemy.text("SELECT * FROM potion_inv")).all()
+    
+    with db.engine.begin() as connection:
+        result2 = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
+    first_row = result2.first()
+    red_temp = first_row.num_red_ml
+    blue_temp = first_row.num_blue_ml
+    green_temp = first_row.num_green_ml
+    dark_temp = first_row.num_dark_ml
+    potions_possible = []
+    
+    for potion in result:
+        p_type = potion.potion_type
+        if red_temp >= p_type[0] and green_temp >= p_type[1] and blue_temp >= p_type[2] and dark_temp >= p_type[3]:
+            potions_possible.append({
+                "potion_type": potion.potion_type,
+                "quantity": 1,
+            })
+            red_temp = red_temp - p_type[0]
+            green_temp = green_temp - p_type[1]
+            blue_temp = blue_temp - p_type[2]
+            dark_temp = dark_temp - p_type[3]
 
-    red_possible = first_row.num_red_ml // 100
-    green_possible = first_row.num_green_ml // 100
-    blue_possible = first_row.num_blue_ml // 100
-
-    return [
-            {
-                "potion_type": [100, 0, 0, 0],
-                "quantity": red_possible,
-            }, 
-
-             {
-                "potion_type": [0, 100, 0, 0],
-                "quantity": green_possible,
-            }, 
-
-            {
-                "potion_type": [0, 0, 100, 0],
-                "quantity": blue_possible,
-            }, 
-
-        ]
+    return potions_possible
 

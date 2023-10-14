@@ -15,40 +15,19 @@ def get_catalog():
     # Can return a max of 20 items.
     
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
-    first_row = result.first()
-    num_red = first_row.num_red_potions
-    num_green = first_row.num_green_potions
-    num_blue = first_row.num_blue_potions
+        result = connection.execute(sqlalchemy.text("SELECT * FROM potion_inv")).all()
 
-    if num_green > 0 and num_blue > 0:
-        return [
-                 {
-                    "sku": "BLUE_POTION_0",
-                    "name": "blue potion",
-                    "quantity": num_blue,
-                    "price": 1,
-                    "potion_type": [0, 0, 100, 0],
-                },
-                 {
-                    "sku": "GREEN_POTION_0",
-                    "name": "gren potion",
-                    "quantity": num_green,
-                    "price": 1,
-                    "potion_type": [0, 100, 0, 0],
-                }
-            ]
-    elif num_red > 0:
-        return [
-                {
-                    "sku": "RED_POTION_0",
-                    "name": "red potion",
-                    "quantity": num_red,
-                    "price": 50,
-                    "potion_type": [100, 0, 0, 0],
-                }
-            ]
-    else :
-        return []
+    catalog = []
+
+    for potion in result :
+        if potion.inventory > 0:
+            catalog.append ( {
+                "sku": potion.sku,
+                "quantity": potion.inventory,
+                "price": potion.cost,
+                "potion_type": potion.potion_type
+                })
+            
+    return catalog
 
 
