@@ -8,8 +8,6 @@ from fastapi import FastAPI, HTTPException
 #with db.engine.begin() as connection:
 #        result = connection.execute(sqlalchemy.text(sql_to_execute))
 
-carts = {}
-g_cart_id = 0
 
 router = APIRouter(
     prefix="/carts",
@@ -25,18 +23,24 @@ class NewCart(BaseModel):
 @router.post("/")
 def create_cart(new_cart: NewCart):
     """ """
-    global g_cart_id
-    g_cart_id += 1
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("""INSERT INTO carts (customer) VALUES (:customer_string) RETURNING id"""), [{"customer_string": new_cart.customer}])
 
-    carts[g_cart_id] = {"customer": new_cart.customer}
-    return {"cart_id": g_cart_id}
+    return {"cart_id": result.first().id}
 
 
 @router.get("/{cart_id}")
 def get_cart(cart_id: int):
     """ """
-
-    return carts[cart_id]
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(""" SELECT * FROM carts WHERE id = :cart_id"""), [{"cart_id": cart_id}])
+    cart = result.first()
+    cart1 = {
+        "id": cart.id,
+        "customer": cart.customer,
+        "payment": cart.payment
+    }
+    return cart1
 
 
 class CartItem(BaseModel):
@@ -45,9 +49,10 @@ class CartItem(BaseModel):
 
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
+
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("""INSERT INTO cart_items (cart_id, sku, quantity) VALUES (:id, :item_sku, :quantity) """), [{"id": cart_id, "item_sku": item_sku, "quantity": cart_item.quantity}])
     
-    
-    carts[cart_id][item_sku] = cart_item.quantity
     return "OK"
 
 
@@ -57,40 +62,29 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
+    potions_bought = 0
+    gold_paid = 0
 
-    print(cart_checkout.payment)
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
-    first_row = result.first()
+        connection.execute(sqlalchemy.text("""UPDATE carts SET payment = :payment WHERE id = :id"""), [{"payment": cart_checkout.payment, "id": cart_id}])
 
-    red_bought = 0
-    blue_bought = 0
-    green_bought = 0
-    if "RED_POTION_0" in carts[cart_id].keys():
-        red_bought = carts[cart_id]["RED_POTION_0"] 
-    if "BLUE_POTION_0" in carts[cart_id].keys():
-        blue_bought = carts[cart_id]["BLUE_POTION_0"]
-    if "GREEN_POTION_0" in carts[cart_id].keys():
-        green_bought = carts[cart_id]["GREEN_POTION_0"]
+  
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text("""SELECT * FROM cart_items WHERE cart_id = :id"""), [{"id": cart_id}])
 
-    potions_bought = red_bought + blue_bought + green_bought
-    gold_paid = (red_bought * 50) + ((blue_bought + green_bought) * 1)
-
-    #Updating potion values to put back into database
-    red_final = first_row.num_red_potions - red_bought
-    green_final = first_row.num_green_potions - green_bought
-    blue_final = first_row.num_blue_potions - blue_bought
+    for potion in result :
+        potions_bought += potion.quantity
+        with db.engine.begin() as connection:
+            result1 = connection.execute(sqlalchemy.text("""SELECT * FROM potion_inv WHERE sku = :sku"""), [{"sku": potion.sku}])
+            connection.execute(sqlalchemy.text("""UPDATE potion_inv SET inventory = inventory - :quantity WHERE sku = :sku"""), [{"quantity": potion.quantity, "sku": potion.sku}])
+        gold_paid += result1.first().cost
     
-    #updating gold 
-    gold_final = first_row.gold + gold_paid
-
-    #case if potions in cart are more than potions in db
-    if red_bought > first_row.num_red_potions or blue_bought > first_row.num_blue_potions or green_bought > first_row.num_green_potions:
-       raise HTTPException(status_code = 500, detail ="too many potions in cart")
-
-
+    
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_potions = {red_final},  num_green_potions = {green_final}, num_blue_potions = {blue_final}, gold = {gold_final} WHERE id= 1"))
+        connection.execute(sqlalchemy.text("""UPDATE global_inventory SET gold = gold + :gold_paid WHERE id = 1"""), [{"gold_paid": gold_paid}])
+    
+    print(result)
+
 
 
     return {"total_potions_bought": potions_bought, "total_gold_paid": gold_paid}
