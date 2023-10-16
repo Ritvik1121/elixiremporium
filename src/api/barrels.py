@@ -63,36 +63,45 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
       result = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory"))
     first_row = result.first()
 
-    price = 0
+    red_price = 0
+    blue_price = 0
+    green_price = 0
+
     for barrel in wholesale_catalog:
-       if barrel.sku == "SMALL_RED_BARREL":
-        price = barrel.price
+      match barrel.sku:
+        case "SMALL_RED_BARREL":
+          red_price = barrel.price
+        case "SMALL_BLUE_BARREL":
+          blue_price = barrel.price
+        case "SMALL_RED_BARREL":
+          green_price = barrel.price
+
     
     gold_temp = first_row.gold
 
     plan = []
-    if first_row.num_red_ml < 500 and gold_temp >= price:
+    if first_row.num_red_ml < 500 and gold_temp >= red_price:
       plan.append(
             {
                 "sku": "SMALL_RED_BARREL",
                 "quantity": 1,
             })
-      gold_temp = gold_temp - price
+      gold_temp = gold_temp - red_price
 
-    if first_row.num_blue_ml < 500 and gold_temp >= price:
+    if first_row.num_blue_ml < 500 and gold_temp >= blue_price:
       plan.append (
             {
                 "sku": "SMALL_BLUE_BARREL",
                 "quantity": 1,
             })
-      gold_temp = gold_temp - price
+      gold_temp = gold_temp - blue_price
 
-    if first_row.num_green_ml < 500 and gold_temp >= price:
+    if first_row.num_green_ml < 500 and gold_temp >= green_price:
       plan.append( {
                 "sku": "SMALL_GREEN_BARREL",
                 "quantity": 1,
             })
-      gold_temp = gold_temp - price
+      gold_temp = gold_temp - green_price
       
     return plan
     
