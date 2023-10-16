@@ -73,7 +73,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
           red_price = barrel.price
         case "SMALL_BLUE_BARREL":
           blue_price = barrel.price
-        case "SMALL_RED_BARREL":
+        case "SMALL_GREEN_BARREL":
           green_price = barrel.price
 
     
