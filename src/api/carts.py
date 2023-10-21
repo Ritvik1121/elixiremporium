@@ -78,6 +78,10 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     for potion in result :
         potions_bought += potion.quantity
         with db.engine.begin() as connection:
+            num_available = connection.execute(sqlalchemy.text("""SELECT COALESCE(SUM(amount), 0) FROM potion_ledger WHERE  potion_id = :id"""), [{"id": potion.potion_id}]).first()[0]
+            if num_available < potion.quantity:
+                raise HTTPException(500, detail="Not enough potions of this type")
+
             result1 = connection.execute(sqlalchemy.text("""SELECT * FROM potion_inv WHERE id = :id"""), [{"id": potion.potion_id}])
             connection.execute(sqlalchemy.text("""INSERT INTO potion_ledger (transaction_id, amount, potion_id) 
                                                VALUES (:transaction_id, :amount, :potion_id)"""), 

@@ -18,13 +18,14 @@ def get_catalog():
         result = connection.execute(sqlalchemy.text("""SELECT potion_inv.id, potion_inv.sku, potion_inv.cost, potion_inv.potion_type, SUM(potion_ledger.amount) AS amount
                                                     FROM potion_inv
                                                     JOIN potion_ledger ON potion_ledger.potion_id = potion_inv.id
-                                                    GROUP BY potion_inv.id, potion_ledger.amount, potion_inv.sku, potion_inv.cost, potion_inv.potion_type
+                                                    GROUP BY potion_inv.id, potion_inv.sku, potion_inv.cost, potion_inv.potion_type
                                                     """))
-
-    print(result)
+        
     catalog = []
 
     for potion in result :
+        print(potion)
+        print(potion.amount)
         if potion.amount > 0:
             catalog.append ( {
                 "sku": potion.sku,
