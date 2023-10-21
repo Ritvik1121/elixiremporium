@@ -51,7 +51,11 @@ class CartItem(BaseModel):
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
 
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("""INSERT INTO cart_items (cart_id, potion_id, quantity) SELECT :id, potion_inv.id, :quantity FROM potion_inv WHERE potion_inv.sku = :item_sku """), [{"id": cart_id, "item_sku": item_sku, "quantity": cart_item.quantity}])
+        result = connection.execute(sqlalchemy.text("""INSERT INTO cart_items (cart_id, potion_id, quantity) 
+                                                    SELECT :id, potion_inv.id, :quantity 
+                                                    FROM potion_inv 
+                                                    WHERE potion_inv.sku = :item_sku """), 
+                                                    [{"id": cart_id, "item_sku": item_sku, "quantity": cart_item.quantity}])
     
     return "OK"
 
@@ -67,20 +71,21 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
 
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text("""UPDATE carts SET payment = :payment WHERE id = :id"""), [{"payment": cart_checkout.payment, "id": cart_id}])
-
-  
-    with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text("""SELECT * FROM cart_items WHERE cart_id = :id"""), [{"id": cart_id}])
+        name = connection.execute(sqlalchemy.text("""SELECT customer FROM carts WHERE id = :id"""), [{"id": cart_id}]).first()[0]
+        transaction_id = connection.execute(sqlalchemy.text("""INSERT INTO shop_transactions (description) VALUES (:description) RETURNING id """), [{"description": f"{name} purchased some potions"}]).first().id
 
     for potion in result :
         potions_bought += potion.quantity
         with db.engine.begin() as connection:
             result1 = connection.execute(sqlalchemy.text("""SELECT * FROM potion_inv WHERE id = :id"""), [{"id": potion.potion_id}])
-            connection.execute(sqlalchemy.text("""UPDATE potion_inv SET inventory = inventory - :quantity WHERE id = :id"""), [{"quantity": potion.quantity, "id": potion.potion_id}])
+            connection.execute(sqlalchemy.text("""INSERT INTO potion_ledger (transaction_id, amount, potion_id) 
+                                               VALUES (:transaction_id, :amount, :potion_id)"""), 
+                                               [{"transaction_id": transaction_id, "amount": (potion.quantity * -1), "potion_id": potion.potion_id}])
         gold_paid += (result1.first().cost * potion.quantity)
     
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text("""UPDATE global_inventory SET gold = gold + :gold_paid WHERE id = 1"""), [{"gold_paid": gold_paid}])
+        connection.execute(sqlalchemy.text("""INSERT INTO gold_ledger (transaction_id, amount) VALUES (:transaction_id, :amount) """), [{"transaction_id": transaction_id, "amount": gold_paid}])
     
 
 

@@ -15,15 +15,20 @@ def get_catalog():
     # Can return a max of 20 items.
     
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text("SELECT * FROM potion_inv")).all()
+        result = connection.execute(sqlalchemy.text("""SELECT potion_inv.id, potion_inv.sku, potion_inv.cost, potion_inv.potion_type, SUM(potion_ledger.amount) AS amount
+                                                    FROM potion_inv
+                                                    JOIN potion_ledger ON potion_ledger.potion_id = potion_inv.id
+                                                    GROUP BY potion_inv.id, potion_ledger.amount, potion_inv.sku, potion_inv.cost, potion_inv.potion_type
+                                                    """))
 
+    print(result)
     catalog = []
 
     for potion in result :
-        if potion.inventory > 0:
+        if potion.amount > 0:
             catalog.append ( {
                 "sku": potion.sku,
-                "quantity": potion.inventory,
+                "quantity": potion.amount,
                 "price": potion.cost,
                 "potion_type": potion.potion_type
                 })
