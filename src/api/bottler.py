@@ -55,15 +55,15 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory]):
         if green_ml_used > 0:
             connection.execute(sqlalchemy.text("""INSERT INTO ml_ledger (transaction_id, amount, barrel_type)
                                                 VALUES (:transaction_id, :amount, :barrel_type )
-                                               """), [{"transaction_id": transaction_id, "amount": (red_ml_used * -1), "barrel_type": [0,1,0,0]}])
+                                               """), [{"transaction_id": transaction_id, "amount": (green_ml_used * -1), "barrel_type": [0,1,0,0]}])
         if blue_ml_used > 0:
             connection.execute(sqlalchemy.text("""INSERT INTO ml_ledger (transaction_id, amount, barrel_type)
                                                 VALUES (:transaction_id, :amount, :barrel_type )
-                                               """), [{"transaction_id": transaction_id, "amount": (red_ml_used * -1), "barrel_type": [0,0,1,0]}])
+                                               """), [{"transaction_id": transaction_id, "amount": (blue_ml_used * -1), "barrel_type": [0,0,1,0]}])
         if dark_ml_used > 0:
             connection.execute(sqlalchemy.text("""INSERT INTO ml_ledger (transaction_id, amount, barrel_type)
                                                 VALUES (:transaction_id, :amount, :barrel_type )
-                                               """), [{"transaction_id": transaction_id, "amount": (red_ml_used * -1), "barrel_type": [0,0,0,1]}])
+                                               """), [{"transaction_id": transaction_id, "amount": (dark_ml_used * -1), "barrel_type": [0,0,0,1]}])
     return "OK"
 
 # Gets called 4 times a day
