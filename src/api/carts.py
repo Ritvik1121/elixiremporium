@@ -94,6 +94,11 @@ def search_orders(
     else :
         assert False
 
+    if sort_order == search_sort_order.desc :
+        order_by = order_by.desc()
+    elif sort_order == search_sort_order.asc :
+        order_by = order_by.asc()
+
     if search_page != "":
         page = int(search_page)
     else:
@@ -128,8 +133,7 @@ def search_orders(
     if potion_sku != "":
         stmt = stmt.where(pot_inv.c.sku.ilike(f"%{potion_sku}%"))
 
-    if sort_order == search_sort_order.desc :
-        stmt.order_by(order_by, )
+ 
 
     with db.engine.connect() as conn:
         result = conn.execute(stmt)
