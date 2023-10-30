@@ -11,6 +11,8 @@ from enum import Enum
 #        result = connection.execute(sqlalchemy.text(sql_to_execute))
 
 
+offset = 0
+
 router = APIRouter(
     prefix="/carts",
     tags=["cart"],
@@ -97,7 +99,8 @@ def search_orders(
     else:
         page = 0
     
-    offset = 5 * page
+    global offset
+    offset += 5 * page
     
     t1 = sqlalchemy.join(transaction, potions, transaction.c.id == potions.c.transaction_id)
     t2 = sqlalchemy.join(gold, t1, gold.c.transaction_id == transaction.c.id)
@@ -150,7 +153,7 @@ def search_orders(
     prev = ""
     next = ""
     if offset >= 1:
-        prev = "1"
+        prev = "-1"
     if count == 5:
         next = "1"
     return {
